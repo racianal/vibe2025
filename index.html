@@ -40,6 +40,10 @@
             padding: 8px;
             width: 20%;
         }
+        .edit-btn, .delete-btn {
+            padding: 4px 8px;
+            margin: 2px;
+        }
     </style>
 </head>
 <body>
@@ -65,38 +69,35 @@
 </div>
 
 <script>
-    let items = [];
-    let nextId = 1;
-
-    function renderList() {
-        const listBody = document.getElementById('listBody');
-        listBody.innerHTML = '';
-
-        items.forEach((item, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${item.text}</td>
-                <td><button onclick="removeItem(${index})">Remove</button></td>
-            `;
-            listBody.appendChild(row);
-        });
-    }
-
-    function addItem() {
+    async function addItem() {
         const newItemInput = document.getElementById('newItem');
         const newItemText = newItemInput.value.trim();
-
         if (newItemText) {
-            items.push({ id: nextId++, text: newItemText });
-            newItemInput.value = '';
-            renderList();
+            // Временная заглушка, так как добавление не реализовано
+            alert('Добавление задач пока не поддерживается');
         }
     }
 
-    function removeItem(index) {
-        items.splice(index, 1);
-        renderList();
+    async function editItem(id, currentText) {
+        const newText = prompt('Edit task:', currentText);
+        if (newText !== null && newText.trim()) {
+            try {
+                const response = await fetch('/edit', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, text: newText.trim() })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    location.reload();
+                } else {
+                    alert('Ошибка: ' + result.error);
+                }
+            } catch (err) {
+                console.error('Error editing item:', err);
+                alert('Server error');
+            }
+        }
     }
 </script>
 
