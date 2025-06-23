@@ -65,39 +65,32 @@
 </div>
 
 <script>
-    let items = [];
-    let nextId = 1;
-
-    function renderList() {
-        const listBody = document.getElementById('listBody');
-        listBody.innerHTML = '';
-
-        items.forEach((item, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${item.text}</td>
-                <td><button onclick="removeItem(${index})">Remove</button></td>
-            `;
-            listBody.appendChild(row);
-        });
-    }
-
-    function addItem() {
+    // Удаляем клиентский массив items, так как теперь работаем с сервером
+    async function addItem() {
         const newItemInput = document.getElementById('newItem');
         const newItemText = newItemInput.value.trim();
-
         if (newItemText) {
-            items.push({ id: nextId++, text: newItemText });
-            newItemInput.value = '';
-            renderList();
+            try {
+                const response = await fetch('/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: newItemText })
+                });
+                const result = await response.json();
+                if (result.success) {
+                    newItemInput.value = '';
+                    location.reload(); // Перезагружаем страницу для отображения новой задачи
+                } else {
+                    alert('Ошибка: ' + result.error);
+                }
+            } catch (err) {
+                console.error('Error adding item:', err);
+                alert('Ошибка сервера');
+            }
         }
     }
 
-    function removeItem(index) {
-        items.splice(index, 1);
-        renderList();
-    }
+    // Удаляем renderList и removeItem, так как они не нужны
 </script>
 
 </body>
