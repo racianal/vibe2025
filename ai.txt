@@ -1,0 +1,162 @@
+У меня есть готовый репозиторий, учитывая его структуру необходимо добавить аутентификацию пользователей. То есть на первой странице должна быть кнопка создания пользователя и само окно аунтентификации. При успешном входе пользователя перекидывает на страницу с To-Do-list (для каждого пользователя создается новая таблица, взаимодействовать с которой может только 1 пользователь). У каждой таблицы должна быть функция добавления, удаления и редактирования. Такие файлы там есть.
+db.sql:
+CREATE DATABASE IF NOT EXISTS todolist;
+USE todolist;CREATE TABLE IF NOT EXISTS items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    text VARCHAR(255) NOT NULL
+);
+index.html:
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #todoList {
+            border-collapse: collapse;
+            width: 70%;
+            margin: 0 auto;
+        }
+        #todoList th, #todoList td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        #todoList th {
+            background-color: #f0f0f0;
+        }
+        #todoList th:first-child, #todoList th:last-child {
+            width: 5%;
+        }
+        #todoList th:nth-child(2) {
+            width: 90%;
+        }
+        .add-form {
+            margin-top: 20px;
+            width: 70%;
+            margin: 20px auto;
+        }
+        .add-form input[type="text"] {
+            padding: 8px;
+            width: 70%;
+        }
+        .add-form button {
+            padding: 8px;
+            width: 20%;
+        }
+    </style>
+</head>
+<body>
+
+<h2 style="text-align: center;">To-Do List</h2>
+
+<table id="todoList">
+    <thead>
+        <tr>
+            <th>Number</th>
+            <th>Text</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody id="listBody">
+        {{rows}}
+    </tbody>
+</table>
+
+<div class="add-form">
+    <input type="text" id="newItem" placeholder="Enter new item">
+    <button onclick="addItem()">Add</button>
+</div>
+
+<script>
+    let items = [];
+    let nextId = 1;
+
+    function renderList() {
+        const listBody = document.getElementById('listBody');
+        listBody.innerHTML = '';
+
+        items.forEach((item, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${item.text}</td>
+                <td><button onclick="removeItem(${index})">Remove</button></td>
+            `;
+            listBody.appendChild(row);
+        });
+    }
+
+    function addItem() {
+        const newItemInput = document.getElementById('newItem');
+        const newItemText = newItemInput.value.trim();
+
+        if (newItemText) {
+            items.push({ id: nextId++, text: newItemText });
+            newItemInput.value = '';
+            renderList();
+        }
+    }
+
+    function removeItem(index) {
+        items.splice(index, 1);
+        renderList();
+    }
+</script>
+
+</body>
+</html>
+index.js:
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const mysql = require('mysql2/promise');
+
+const PORT = 3000;// Database connection settings
+const dbConfig = {
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'todolist',
+  };  async function retrieveListItems() {
+    try {
+      // Create a connection to the database
+      const connection = await mysql.createConnection(dbConfig);  // Query to select all items from the database
+  const query = 'SELECT id, text FROM items';  // Execute the query
+  const [rows] = await connection.execute(query);  // Close the connection
+  await connection.end();  // Return the retrieved items as a JSON array
+  return rows;
+} catch (error) {
+  console.error('Error retrieving list items:', error);
+  throw error; // Re-throw the error
+}  }// Stub function for generating HTML rows
+async function getHtmlRows() {
+    // Example data - replace with actual DB data later
+    /*
+    const todoItems = [
+        { id: 1, text: 'First todo item' },
+        { id: 2, text: 'Second todo item' }
+    ];*/const todoItems = await retrieveListItems();// Generate HTML for each item
+return todoItems.map(item =>     <tr>         <td>${item.id}</td>         <td>${item.text}</td>         <td><button class="delete-btn">×</button></td>     </tr>).join('');}// Modified request handler with template replacement
+async function handleRequest(req, res) {
+    if (req.url === '/') {
+        try {
+            const html = await fs.promises.readFile(
+                path.join(__dirname, 'index.html'), 
+                'utf8'
+            );        // Replace template placeholder with actual content
+        const processedHtml = html.replace('{{rows}}', await getHtmlRows());    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.end(processedHtml);
+} catch (err) {
+    console.error(err);
+    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end('Error loading index.html');
+}} else {
+    res.writeHead(404, { 'Content-Type': 'text/plain' });
+    res.end('Route not found');
+}}// Create and start server
+const server = http.createServer(handleRequest);
+server.listen(PORT, () => console.log(Server running on port ${PORT}));
+

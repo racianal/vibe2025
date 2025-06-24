@@ -3,102 +3,141 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>To-Do List</title>
+    <title>Login / Register</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-        }
-        #todoList {
-            border-collapse: collapse;
-            width: 70%;
-            margin: 0 auto;
-        }
-        #todoList th, #todoList td {
-            border: 1px solid #ddd;
-            padding: 8px;
-            text-align: left;
-        }
-        #todoList th {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
             background-color: #f0f0f0;
         }
-        #todoList th:first-child, #todoList th:last-child {
-            width: 5%;
+        .container {
+            width: 300px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
         }
-        #todoList th:nth-child(2) {
-            width: 90%;
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
         }
-        .add-form {
-            margin-top: 20px;
-            width: 70%;
-            margin: 20px auto;
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            border-bottom: 2px solid #ddd;
         }
-        .add-form input[type="text"] {
-            padding: 8px;
-            width: 70%;
+        .tab.active {
+            border-bottom: 2px solid #007bff;
+            font-weight: bold;
         }
-        .add-form button {
-            padding: 8px;
-            width: 20%;
+        .form-container {
+            display: none;
+        }
+        .form-container.visible {
+            display: block;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            box-sizing: border-box;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <div class="tabs">
+            <div class="tab active" onclick="showForm('loginForm')">Login</div>
+            <div class="tab" onclick="showForm('registerForm')">Register</div>
+        </div>
 
-<h2 style="text-align: center;">To-Do List</h2>
+        <form id="loginForm" class="form-container visible" onsubmit="login(event)">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Login</button>
+            <div class="error" id="loginError"></div>
+        </form>
 
-<table id="todoList">
-    <thead>
-        <tr>
-            <th>Number</th>
-            <th>Text</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody id="listBody">
-        {{rows}}
-    </tbody>
-</table>
+        <form id="registerForm" class="form-container" onsubmit="register(event)">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">Register</button>
+            <div class="error" id="registerError"></div>
+        </form>
+    </div>
 
-<div class="add-form">
-    <input type="text" id="newItem" placeholder="Enter new item">
-    <button onclick="addItem()">Add</button>
-</div>
-
-<script>
-    let items = [];
-    let nextId = 1;
-
-    function renderList() {
-        const listBody = document.getElementById('listBody');
-        listBody.innerHTML = '';
-
-        items.forEach((item, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${item.text}</td>
-                <td><button onclick="removeItem(${index})">Remove</button></td>
-            `;
-            listBody.appendChild(row);
-        });
-    }
-
-    function addItem() {
-        const newItemInput = document.getElementById('newItem');
-        const newItemText = newItemInput.value.trim();
-
-        if (newItemText) {
-            items.push({ id: nextId++, text: newItemText });
-            newItemInput.value = '';
-            renderList();
+    <script>
+        function showForm(formId) {
+            document.querySelectorAll('.form-container').forEach(f => f.classList.remove('visible'));
+            document.getElementById(formId).classList.add('visible');
+            
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
         }
-    }
 
-    function removeItem(index) {
-        items.splice(index, 1);
-        renderList();
-    }
-</script>
+        async function login(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch('/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (response.ok) {
+                    window.location.href = '/todo';
+                } else {
+                    document.getElementById('loginError').textContent = result.error;
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+            }
+        }
 
+        async function register(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+            
+            try {
+                const response = await fetch('/register', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                if (response.ok) {
+                    showForm('loginForm');
+                    document.getElementById('registerError').textContent = '';
+                } else {
+                    document.getElementById('registerError').textContent = result.error;
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+            }
+        }
+    </script>
 </body>
 </html>

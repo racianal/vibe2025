@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Register</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .auth-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 300px;
+        }
+        .auth-container h2 {
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .form-group button {
+            width: 100%;
+            padding: 8px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .form-group button:hover {
+            background: #0056b3;
+        }
+        .toggle-link {
+            text-align: center;
+            margin-top: 10px;
+            cursor: pointer;
+            color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <h2 id="formTitle">Login</h2>
+        <div id="loginForm">
+            <div class="form-group">
+                <label for="loginUsername">Username</label>
+                <input type="text" id="loginUsername" required>
+            </div>
+            <div class="form-group">
+                <label for="loginPassword">Password</label>
+                <input type="password" id="loginPassword" required>
+            </div>
+            <div class="form-group">
+                <button onclick="login()">Login</button>
+            </div>
+            <div class="toggle-link" onclick="toggleForm()">Need an account? Register</div>
+        </div>
+        <div id="registerForm" style="display: none;">
+            <div class="form-group">
+                <label for="registerUsername">Username</label>
+                <input type="text" id="registerUsername" required>
+            </div>
+            <div class="form-group">
+                <label for="registerPassword">Password</label>
+                <input type="password" id="registerPassword" required>
+            </div>
+            <div class="form-group">
+                <button onclick="register()">Register</button>
+            </div>
+            <div class="toggle-link" onclick="toggleForm()">Already have an account? Login</div>
+        </div>
+    </div>
+
+    <script>
+        function toggleForm() {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const formTitle = document.getElementById('formTitle');
+            
+            if (loginForm.style.display === 'none') {
+                loginForm.style.display = 'block';
+                registerForm.style.display = 'none';
+                formTitle.textContent = 'Login';
+            } else {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                formTitle.textContent = 'Register';
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('loginUsername').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                window.location.href = '/todo';
+            } else {
+                alert(result.message);
+            }
+        }
+
+        async function register() {
+            const username = document.getElementById('registerUsername').value;
+            const password = document.getElementById('registerPassword').value;
+
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert('Registration successful! Please login.');
+                toggleForm();
+            } else {
+                alert(result.message);
+            }
+        }
+    </script>
+</body>
+</html>
